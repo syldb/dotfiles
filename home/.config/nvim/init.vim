@@ -32,8 +32,11 @@ set confirm
 set number
 set grepprg=git\ grep\ -n
 filetype plugin on
+" Scroll
+set scrolloff=5
+set sidescrolloff=5
 " Invisible chars
-set listchars=tab:>-,trail:~,extends:>,precedes:<
+set listchars=tab:>-,trail:~,extends:>,precedes:<,nbsp:+
 set list
 " Tabs
 set expandtab
@@ -47,7 +50,7 @@ autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
 
 " Quit nvim if only nerdtree is open
-"autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 
 let NERDTreeMinimalUI = 1
 
@@ -62,8 +65,9 @@ augroup END
 
 """ Custom bindings
 
-:let mapleader = ","
+let mapleader=","
 nmap <C-n> :NERDTreeToggle<CR>
+nnoremap <C-b> :CtrlPBuffer<CR>
 nnoremap <leader>g :silent grep! <cword><CR>
 "Splits
 nnoremap <C-h> <C-w>h
@@ -73,9 +77,5 @@ nnoremap <C-l> <C-w>l
 "Filepaths
 nnoremap <leader>fp :let @+=expand("%")<CR>
 nnoremap <leader>ffp :let @+=expand("%:p")<CR>
-"Buffers
-nnoremap <leader>bl :ls<CR>
-nnoremap <leader>bg :buffers<CR>:buffer<Space>
-nnoremap <leader>bn :bn<CR>
-nnoremap <leader>bc :bd<CR>
+"Back to last buffer
 nnoremap <leader>< :e#<CR>
