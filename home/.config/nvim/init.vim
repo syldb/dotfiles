@@ -9,7 +9,8 @@ Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'airblade/vim-gitgutter'
 Plug 'vim-airline/vim-airline'
 Plug 'nvie/vim-flake8'
-Plug 'ctrlpvim/ctrlp.vim'
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
 Plug 'google/vim-searchindex'
 Plug 'preservim/nerdcommenter'
 call plug#end()
@@ -30,18 +31,14 @@ set mouse=a
 set hidden
 set confirm
 set number
+set encoding=utf-8
+set title
 set grepprg=git\ grep\ -n
-filetype plugin on
-" Scroll
-set scrolloff=5
-set sidescrolloff=5
-" Invisible chars
-set listchars=tab:>-,trail:~,extends:>,precedes:<,nbsp:+
-set list
-" Tabs
-set expandtab
-setlocal tabstop=2
-setlocal shiftwidth=2
+filetype plugin indent on
+set scrolloff=5 sidescrolloff=5
+set incsearch ignorecase smartcase hlsearch
+set list listchars=tab:>-,trail:~,extends:>,precedes:<,nbsp:+
+set tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent
 
 """ NERDTree
 
@@ -50,25 +47,89 @@ autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
 
 " Quit nvim if only nerdtree is open
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-
+"autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+function! CheckLeftBuffers()
+  if tabpagenr('$') == 1
+    let i = 1
+    while i <= winnr('$')
+      if getbufvar(winbufnr(i), '&buftype') == 'help' ||
+          \ getbufvar(winbufnr(i), '&buftype') == 'quickfix' ||
+          \ exists('t:NERDTreeBufName') &&
+          \   bufname(winbufnr(i)) == t:NERDTreeBufName ||
+          \ bufname(winbufnr(i)) == '__Tag_List__'
+        let i += 1
+      else
+        break
+      endif
+    endwhile
+    if i == winnr('$') + 1
+      qall
+    endif
+    unlet i
+  endif
+endfunction
+autocmd BufEnter * call CheckLeftBuffers()
 let NERDTreeMinimalUI = 1
 
-""" Quickfixes
+""" FZF
 
-" Auto open
+" Hide status bar while using fzf commands
+if has('nvim') || has('gui_running')
+  autocmd! FileType fzf
+  autocmd  FileType fzf set laststatus=0 | autocmd WinLeave <buffer> set laststatus=2
+endif
+
+" Customize fzf colors to match color scheme
+let g:fzf_colors =
+\ { 'fg':      ['fg', 'Normal'],
+  \ 'bg':      ['bg', 'Normal'],
+  \ 'hl':      ['fg', 'Comment'],
+  \ 'fg+':     ['fg', 'CursorLine', 'CursorColumn', 'Normal'],
+  \ 'bg+':     ['bg', 'CursorLine', 'CursorColumn'],
+  \ 'hl+':     ['fg', 'Statement'],
+  \ 'info':    ['fg', 'PreProc'],
+  \ 'border':  ['fg', 'Ignore'],
+  \ 'prompt':  ['fg', 'Conditional'],
+  \ 'pointer': ['fg', 'Exception'],
+  \ 'marker':  ['fg', 'Keyword'],
+  \ 'spinner': ['fg', 'Label'],
+  \ 'header':  ['fg', 'Comment'] }
+
+" GGrep command to use git grep with fzf
+command! -bang -nargs=* GGrep
+  \ call fzf#vim#grep(
+  \   'git grep --line-number -- '.shellescape(<q-args>), 0,
+  \   fzf#vim#with_preview({'dir': systemlist('git rev-parse --show-toplevel')[0]}), <bang>0)
+
+
+""" Airline
+
+let g:airline#extensions#tabline#enabled = 1
+
+""" Custom functions
+
+" Auto open quickfixes
 augroup quickfix
     autocmd!
     autocmd QuickFixCmdPost [^l]* cwindow
     autocmd QuickFixCmdPost l* lwindow
 augroup END
 
+" Trim Whitespaces
+function! TrimWhitespace()
+    let l:save = winsaveview()
+    %s/\\\@<!\s\+$//e
+    call winrestview(l:save)
+endfunction
+
 """ Custom bindings
 
 let mapleader=","
-nmap <C-n> :NERDTreeToggle<CR>
-nnoremap <C-b> :CtrlPBuffer<CR>
-nnoremap <leader>g :silent grep! <cword><CR>
+nnoremap <C-n> :NERDTreeToggle<CR>
+nnoremap <leader>t :call TrimWhitespace()<CR>
+nnoremap <leader>b :Buffers<CR>
+nnoremap <leader>p :Files<CR>
+nnoremap <leader>g :GGrep<CR>
 "Splits
 nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
