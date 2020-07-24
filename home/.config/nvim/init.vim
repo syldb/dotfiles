@@ -40,35 +40,9 @@ set incsearch ignorecase smartcase hlsearch
 set list listchars=tab:>-,trail:~,extends:>,precedes:<,nbsp:+
 set tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent
 
-""" NERDTree
+""" Nerdtree
 
-" Open on directories
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
-
-" Quit nvim if only nerdtree is open
-"autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-function! CheckLeftBuffers()
-  if tabpagenr('$') == 1
-    let i = 1
-    while i <= winnr('$')
-      if getbufvar(winbufnr(i), '&buftype') == 'help' ||
-          \ getbufvar(winbufnr(i), '&buftype') == 'quickfix' ||
-          \ exists('t:NERDTreeBufName') &&
-          \   bufname(winbufnr(i)) == t:NERDTreeBufName ||
-          \ bufname(winbufnr(i)) == '__Tag_List__'
-        let i += 1
-      else
-        break
-      endif
-    endwhile
-    if i == winnr('$') + 1
-      qall
-    endif
-    unlet i
-  endif
-endfunction
-autocmd BufEnter * call CheckLeftBuffers()
+let NERDTreeIgnore = ['\.pyc$', '^__pycache__$']
 let NERDTreeMinimalUI = 1
 
 """ FZF
@@ -127,16 +101,14 @@ endfunction
 let mapleader=","
 nnoremap <C-n> :NERDTreeToggle<CR>
 nnoremap <leader>t :call TrimWhitespace()<CR>
+nnoremap œ :bn<CR>
+"FZF
 nnoremap <leader>b :Buffers<CR>
-nnoremap <leader>p :Files<CR>
+nnoremap <leader>ap :Files<CR>
+nnoremap <leader>p :GFiles<CR>
 nnoremap <leader>g :GGrep<CR>
-"Splits
-nnoremap <C-h> <C-w>h
-nnoremap <C-j> <C-w>j
-nnoremap <C-k> <C-w>k
-nnoremap <C-l> <C-w>l
+nnoremap <leader>f :Rg<CR>
+nnoremap <leader>h :History<CR>
 "Filepaths
 nnoremap <leader>fp :let @+=expand("%")<CR>
 nnoremap <leader>ffp :let @+=expand("%:p")<CR>
-"Back to last buffer
-nnoremap <leader>< :e#<CR>
